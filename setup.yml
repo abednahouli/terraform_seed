@@ -1,0 +1,65 @@
+- name: Configure Web Server (Nginx & MySQL with Remote Access)
+  hosts: web
+  become: yes
+  vars_files:
+    - ansible_vars.yml
+  tasks:
+    - name: Update package cache
+      apt:
+        update_cache: yes
+
+    - name: Install Required Packages (Nginx, MySQL, Python MySQL Module)
+      apt:
+        name:
+          - nginx
+          - mysql-server
+          - python3-pymysql
+        state: present
+
+    - name: Start & Enable Services
+      service:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop:
+        - nginx
+        - mysql
+
+    - name: Allow MySQL to Listen on All IPs (0.0.0.0)
+      replace:
+        path: /etc/mysql/mysql.conf.d/mysqld.cnf
+        regexp: '^bind-address\s*=\s*127.0.0.1'
+        replace: "bind-address = 0.0.0.0"
+      notify: Restart MySQL
+
+    - name: Create MySQL Admin User (`{{ db_admin_user }}`)
+      mysql_user:
+        name: "{{ db_admin_user }}"
+        password: "{{ db_admin_password }}"
+        priv: "*.*:ALL"
+        host: "%"
+        state: present
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    - name: Create Database `mydb`
+      mysql_db:
+        name: mydb
+        state: present
+        login_user: "{{ db_admin_user }}"
+        login_password: "{{ db_admin_password }}"
+
+    - name: Open Firewall Ports (Nginx & MySQL)
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+      loop:
+        - "80" # HTTP
+        - "443" # HTTPS
+        - "3306" # MySQL
+
+  handlers:
+    - name: Restart MySQL
+      service:
+        name: mysql
+        state: restarted

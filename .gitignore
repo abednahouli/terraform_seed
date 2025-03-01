@@ -23,3 +23,7 @@ override.tf.json
 # Include .terraformrc and terraform.rc for local CLI configuration
 .terraformrc
 terraform.rc
+
+# Ansible Vars
+ansible_vars.yml 
+inventory.ini
