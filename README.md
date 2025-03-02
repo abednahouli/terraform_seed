@@ -68,3 +68,4 @@ This will also clear the Ansible inventory file.
 ## Notes
 
 - The `inventory.ini` file will be updated automatically by the `manage_terraform.py` script with the IP address of the newly created droplet.
+- [Link to our actual Code Caesar website](http://www.code-caesar.com)
