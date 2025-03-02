@@ -4,9 +4,10 @@
   vars_files:
     - ansible_vars.yml
   tasks:
-    - name: Update package cache
+    - name: Update and upgrade package cache
       apt:
         update_cache: yes
+        upgrade: dist
 
     - name: Install Required Packages (Nginx, MySQL, Python MySQL Module)
       apt:
@@ -14,6 +15,11 @@
           - nginx
           - mysql-server
           - python3-pymysql
+        state: present
+
+    - name: Install Git
+      apt:
+        name: git
         state: present
 
     - name: Start & Enable Services
@@ -58,8 +64,39 @@
         - "443" # HTTPS
         - "3306" # MySQL
 
+    - name: Remove existing web directory
+      file:
+        path: /var/www/html
+        state: absent
+
+    - name: Clone Private GitHub Repository
+      git:
+        repo: "https://{{ github_token }}@github.com/abednahouli/code-caesar.git"
+        dest: /var/www/html
+        version: main
+        accept_hostkey: yes
+
+    - name: Set Permissions for Web Directory
+      file:
+        path: /var/www/html
+        owner: www-data
+        group: www-data
+        state: directory
+        recurse: yes
+
+    - name: Configure Nginx to Serve Cloned Repository
+      template:
+        src: nginx.conf.j2
+        dest: /etc/nginx/sites-available/default
+      notify: Restart Nginx
+
   handlers:
     - name: Restart MySQL
       service:
         name: mysql
+        state: restarted
+
+    - name: Restart Nginx
+      service:
+        name: nginx
         state: restarted
