@@ -4,10 +4,9 @@
   vars_files:
     - ansible_vars.yml
   tasks:
-    - name: Update and upgrade package cache
+    - name: Update package cache
       apt:
         update_cache: yes
-        upgrade: dist
 
     - name: Install Required Packages (Nginx, MySQL, Python MySQL Module)
       apt:
